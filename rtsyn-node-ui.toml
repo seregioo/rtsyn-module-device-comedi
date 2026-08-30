@@ -1,0 +1,29 @@
+name = "COMEDI"
+description = "COMEDI analog and digital data acquisition device."
+
+[[controls]]
+name = "device_path"
+label = "Device path"
+kind = "text"
+target = "param"
+param_id = 0
+value_type = "string"
+default = "/dev/comedi0"
+
+[[controls]]
+name = "analog_output_gain_0"
+label = "Analog output gain 0"
+kind = "number"
+target = "param"
+param_id = 1
+value_type = "f64"
+default = "1.0"
+
+[[controls]]
+name = "analog_output_gain_1"
+label = "Analog output gain 1"
+kind = "number"
+target = "param"
+param_id = 2
+value_type = "f64"
+default = "1.0"
