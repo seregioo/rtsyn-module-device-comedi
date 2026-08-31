@@ -17,6 +17,9 @@ rtsyn_abi_status_t RTSYN_ABI_CALL rtsyn_comedi_create(void **out_instance) {
     }
 
     memset(comedi->analog_values, 0, sizeof(comedi->analog_values));
+    for (uint32_t channel = 0; channel < RTSYN_COMEDI_MAX_PORTS; ++channel) {
+        comedi->analog_output_gains[channel] = 1.0;
+    }
     memset(comedi->digital_values, 0, sizeof(comedi->digital_values));
     strncpy(comedi->device_path, "/dev/comedi0", sizeof(comedi->device_path) - 1);
     comedi->device_path[sizeof(comedi->device_path) - 1] = '\0';

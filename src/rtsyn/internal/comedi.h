@@ -33,6 +33,7 @@ extern uint32_t rtsyn_comedi_port_channels[RTSYN_COMEDI_MAX_PORTS];
  */
 typedef struct rtsyn_comedi_instance_s {
     double analog_values[RTSYN_COMEDI_MAX_PORTS];
+    double analog_output_gains[RTSYN_COMEDI_MAX_PORTS];
     uint64_t digital_values[RTSYN_COMEDI_MAX_PORTS];
     char device_path[16];
     uint64_t hardware_ready;
@@ -49,7 +50,7 @@ typedef struct rtsyn_comedi_instance_s {
  */
 typedef enum rtsyn_comedi_instance_params_e : uint32_t {
     RTSYN_COMEDI_PARAM_DEVICE_PATH = 0,
-    RTSYN_COMEDI_PARAM_COUNT = 1,
+    RTSYN_COMEDI_PARAM_ANALOG_OUTPUT_GAIN_BASE = 1,
 } rtsyn_comedi_instance_params_t;
 
 /**

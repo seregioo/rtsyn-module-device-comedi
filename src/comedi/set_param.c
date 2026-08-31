@@ -1,3 +1,4 @@
+#include <math.h>
 #include <string.h>
 
 #include "rtsyn/internal/comedi.h"
@@ -16,7 +17,14 @@ rtsyn_abi_status_t RTSYN_ABI_CALL rtsyn_comedi_set_param(void *instance, uint32_
         strncpy(comedi->device_path, (const char *)value, sizeof(comedi->device_path) - 1);
         comedi->device_path[sizeof(comedi->device_path) - 1] = '\0';
         return RTSYN_ABI_STATUS_OK;
-    default:
-        return RTSYN_ABI_STATUS_INVALID_ARGUMENT;
+    default: {
+        uint32_t channel = param_index - RTSYN_COMEDI_PARAM_ANALOG_OUTPUT_GAIN_BASE;
+        double gain = *(const double *)value;
+        if (channel >= RTSYN_COMEDI_MAX_PORTS || !isfinite(gain)) {
+            return RTSYN_ABI_STATUS_INVALID_ARGUMENT;
+        }
+        comedi->analog_output_gains[channel] = gain;
+        return RTSYN_ABI_STATUS_OK;
+    }
     }
 }

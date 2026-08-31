@@ -139,13 +139,17 @@ int rtsyn_comedi_driver_read_analog(rtsyn_comedi_instance_t *comedi, uint32_t ch
         return -1;
     }
 
-    const comedi_range *range = comedi_get_range(device, subdevice, channel, range_index);
-    if (!range) {
+    const comedi_range *range_ptr = comedi_get_range(device, subdevice, channel, range_index);
+    if (!range_ptr) {
         comedi->last_error = RTSYN_COMEDI_ERROR_RANGE;
         return -1;
     }
+    comedi_range range = *range_ptr;
+    const lsampl_t maxdata = comedi_get_maxdata(device, subdevice, channel);
 
-    *out_value = comedi_to_phys(raw, range, comedi_get_maxdata(device, subdevice, channel));
+    /* comedi_to_phys() returns NaN for endpoint samples under Comedilib's
+     * default COMEDI_OOR_NAN policy. Keep rail/overrange samples observable. */
+    *out_value = range.min + ((double)raw / (double)maxdata) * (range.max - range.min);
     comedi->last_error = RTSYN_COMEDI_ERROR_NONE;
     return 0;
 #else
@@ -163,14 +167,17 @@ int rtsyn_comedi_driver_write_analog(rtsyn_comedi_instance_t *comedi, uint32_t c
     comedi_t *device = (comedi_t *)comedi->device;
     const unsigned int subdevice = (unsigned int)comedi->analog_output_subdevice;
     const unsigned int range_index = 0;
-    const comedi_range *range = comedi_get_range(device, subdevice, channel, range_index);
-    if (!range) {
+    const comedi_range *range_ptr = comedi_get_range(device, subdevice, channel, range_index);
+    if (!range_ptr) {
         comedi->last_error = RTSYN_COMEDI_ERROR_RANGE;
         return -1;
     }
+    comedi_range range = *range_ptr;
+    const lsampl_t maxdata = comedi_get_maxdata(device, subdevice, channel);
 
-    const lsampl_t raw =
-        comedi_from_phys(value, range, comedi_get_maxdata(device, subdevice, channel));
+    if (value < range.min) value = range.min;
+    if (value > range.max) value = range.max;
+    const lsampl_t raw = comedi_from_phys(value, &range, maxdata);
     if (comedi_data_write(device, subdevice, channel, range_index, AREF_GROUND, raw) < 0) {
         comedi->last_error = RTSYN_COMEDI_ERROR_WRITE;
         return -1;

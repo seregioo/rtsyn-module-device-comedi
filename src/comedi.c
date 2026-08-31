@@ -18,7 +18,7 @@ uint32_t rtsyn_comedi_port_channels[RTSYN_COMEDI_MAX_PORTS];
 static rtsyn_abi_port_descriptor_t rtsyn_comedi_ports[RTSYN_COMEDI_MAX_PORTS];
 static char rtsyn_comedi_port_names[RTSYN_COMEDI_MAX_PORTS][32];
 
-static const rtsyn_abi_param_descriptor_t rtsyn_comedi_params[RTSYN_COMEDI_PARAM_COUNT] = {
+static rtsyn_abi_param_descriptor_t rtsyn_comedi_params[1 + RTSYN_COMEDI_MAX_PORTS] = {
     [RTSYN_COMEDI_PARAM_DEVICE_PATH] =
         {
             .name = "device_path",
@@ -26,6 +26,7 @@ static const rtsyn_abi_param_descriptor_t rtsyn_comedi_params[RTSYN_COMEDI_PARAM
             .value_type = RTSYN_ABI_VALUE_STRING,
         },
 };
+static char rtsyn_comedi_param_names[RTSYN_COMEDI_MAX_PORTS][40];
 
 static const rtsyn_abi_state_descriptor_t rtsyn_comedi_states[RTSYN_COMEDI_STATE_COUNT] = {
     [RTSYN_COMEDI_STATE_HARDWARE_READY] =
@@ -47,7 +48,7 @@ static rtsyn_abi_node_descriptor_t rtsyn_comedi_descriptor = {
     .node_type = RTSYN_ABI_NODE_DEVICE,
     .port_count = 0,
     .ports = rtsyn_comedi_ports,
-    .param_count = RTSYN_COMEDI_PARAM_COUNT,
+    .param_count = 1,
     .params = rtsyn_comedi_params,
     .state_count = RTSYN_COMEDI_STATE_COUNT,
     .states = rtsyn_comedi_states,
@@ -89,6 +90,19 @@ static void rtsyn_comedi_initialize_descriptor(void) {
     if (rtsyn_comedi_driver_discover("/dev/comedi0", &analog_inputs, &analog_outputs,
                                     &digital_inputs, &digital_outputs) != 0) {
         analog_inputs = analog_outputs = digital_inputs = digital_outputs = 1;
+    }
+
+    for (uint32_t channel = 0; channel < analog_outputs && channel < RTSYN_COMEDI_MAX_PORTS;
+         ++channel) {
+        uint32_t param = RTSYN_COMEDI_PARAM_ANALOG_OUTPUT_GAIN_BASE + channel;
+        (void)snprintf(rtsyn_comedi_param_names[channel],
+                       sizeof(rtsyn_comedi_param_names[channel]), "analog_output_gain_%u", channel);
+        rtsyn_comedi_params[param] = (rtsyn_abi_param_descriptor_t){
+            .name = rtsyn_comedi_param_names[channel],
+            .description = "Multiplier applied before writing this analog output channel.",
+            .value_type = RTSYN_ABI_VALUE_F64,
+        };
+        rtsyn_comedi_descriptor.param_count = param + 1;
     }
 
     rtsyn_comedi_add_ports("analog_output", RTSYN_COMEDI_PORT_KIND_ANALOG_OUTPUT,
